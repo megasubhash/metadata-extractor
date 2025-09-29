@@ -1,5 +1,5 @@
 import types
-from datasource.github_strategy import GitHubStrategy
+from datasource.github.strategy import GitHubStrategy
 
 
 def make_strategy():

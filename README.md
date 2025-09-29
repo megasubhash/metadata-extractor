@@ -1,17 +1,16 @@
 # Atlan Take-Home: Data Source Application
 
-A pluggable metadata extractor that connects to a data source (PostgreSQL to start) and extracts:
+A pluggable metadata extractor that connects to a data source and extracts:
 
-- Schema metadata: tables, columns, data types, and constraints (PK, FK, unique)
-- Business context: table/column comments
-- Optional quality metrics: null counts and unique values per column
-- Optional lineage: edges derived from foreign key relationships
+- Schema metadata: structural overview of the source
+- Business context: human-friendly descriptions/tags
+- Optional quality metrics: basic data quality indicators
+- Optional lineage: data relationships and dependencies
 
 Built with Strategy + Factory patterns for extensibility.
 
 ## Project Structure
 
-```
 /atlan-data-source-app/
 ├── datasource/
 │   ├── __init__.py
@@ -21,10 +20,6 @@ Built with Strategy + Factory patterns for extensibility.
 │   │   ├── __init__.py
 │   │   ├── strategy.py
 │   │   └── config.example.yaml
-│   ├── postgres/
-│       ├── __init__.py
-│       ├── strategy.py
-│       └── config.example.yaml
 │   └── redis/
 │       ├── __init__.py
 │       ├── strategy.py
@@ -34,15 +29,14 @@ Built with Strategy + Factory patterns for extensibility.
 │       │   ├── business.py
 │       │   └── quality.py
 │       └── config.example.yaml
-├── config/
-│   └── (optional if using file-based configs)
+├── integrations/
+│   └── openmetadata_adapter.py   # optional, only if publishing to OpenMetadata
 ├── sample_data/
-│   └── init.sql
-├── main.py
+│   └── seed_redis.py
+├── app.py                        # Flask API entrypoint
 ├── requirements.txt
 ├── README.md
 └── THOUGHT_PROCESS.md
-```
 
 ## Setup
 
@@ -54,64 +48,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. Start a local PostgreSQL and load sample data
-
-- Ensure a Postgres server is running locally and accessible.
-- Create database and user matching `config/config.yaml`, or update the config to your environment.
-- Load sample data:
+2. Run the API server (Flask)
 
 ```bash
-psql -h localhost -p 5432 -U sample_user -d sample_db -f sample_data/init.sql
+python app.py
 ```
 
-3. Configure connection
+Server listens on `http://localhost:8000`.
 
-- Update `config/config.yaml`:
+## GitHub API Source
 
-```yaml
-type: postgres
-host: localhost
-port: 5432
-database: sample_db
-user: sample_user
-password: sample_password
-```
-
-## Run
-
-- Extract everything:
-
-```bash
-python main.py --all
-```
-
-- Only schema:
-
-```bash
-python main.py --schema
-```
-
-- Business context (comments):
-
-```bash
-python main.py --business
-```
-
-- Quality metrics:
-
-```bash
-python main.py --quality
-```
-
-- Lineage (foreign key-based):
-
-```bash
-python main.py --lineage
-```
-
-### GitHub API Source
-
-1. Update `config/config.github.yaml` with your target repository and (optional) token, or set `GITHUB_TOKEN` env var.
+1. Prepare config (inline in API request) and set `GITHUB_TOKEN` env var if needed.
 
 ```yaml
 type: github
@@ -121,22 +68,22 @@ repo: Hello-World
 api_base: https://api.github.com
 ```
 
-2. Run with GitHub config:
+2. Call the API:
 
 ```bash
-python main.py --config config/config.github.yaml --all
+curl -X POST http://localhost:8000/extract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": {
+      "type": "github",
+      "owner": "octocat",
+      "repo": "Hello-World"
+    },
+    "flags": { "all": true }
+  }'
 ```
 
-Notes:
-- Token is recommended to avoid low unauthenticated rate limits.
-- Lineage is based on fork relationships.
-- Per-source config examples also live under `datasource/github/config.example.yaml`.
-
-### PostgreSQL Source
-
-- Example config also available at `datasource/postgres/config.example.yaml`.
-
-### Redis Source
+## Redis Source
 
 - **Config example**: `datasource/redis/config.example.yaml`
 
@@ -160,7 +107,7 @@ prefix_tags:
   "order:": "orders"
 ```
 
-- **API usage** (`app.py` must be running):
+2. Call the API:
 
 ```bash
 curl -X POST http://localhost:8000/extract \
@@ -181,19 +128,4 @@ curl -X POST http://localhost:8000/extract \
     "flags": { "all": true }
   }'
 ```
-
-## Design
-
-- Strategy Pattern: `datasource/base.py` defines `DataSourceStrategy` interface. `datasource/postgres_strategy.py` implements it for Postgres.
-- Factory Pattern: `datasource/factory.py` selects strategy based on `config['type']`.
-- Extensibility: Add new sources by creating `your_source_strategy.py` and mapping in the factory.
-
-## Notes
-
-- Quality metric queries can be heavy on large tables. For demo purposes, they run per column; consider sampling / limits in production.
-- Comments are used as business context. Add more context systems (tags) if present in your environment.
-- Schema extraction includes PK, unique constraints, and FK definitions per table.
-
-## License
-
-For take-home assignment evaluation.
+{{ ... }}
