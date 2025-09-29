@@ -44,6 +44,27 @@ curl -X POST http://localhost:8000/extract \
 ```
 You should see JSON with `schema`, `business_context`, `quality_metrics`, and `lineage` (empty for Redis).
 
+## 3b) Run via Jobs API (async)
+Submit a background job and poll for result.
+
+```bash
+# Submit
+curl -X POST http://localhost:8000/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": { "type": "redis", "host": "localhost", "port": 6379, "db": 0 },
+    "flags": { "all": true }
+  }'
+
+# Poll
+curl http://localhost:8000/jobs/<jobId>
+```
+
+Optional: start an RQ worker to process jobs via Redis queue `extract`:
+```bash
+rq worker extract
+```
+
 ## 4) Extract from GitHub
 Optionally test GitHub (public repo shown; token recommended via env `GITHUB_TOKEN`).
 ```bash

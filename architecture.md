@@ -67,6 +67,33 @@ flowchart LR
 ```
 - Supports `configPath` / `openMetadataConfigPath` as file-based alternatives.
 
+## Background Jobs
+- **Queue**: RQ queue named `extract` (configured in `app.py`).
+- **Task entrypoint**: `jobs/tasks.py` → `task_extract(payload)` calls `app.extract_metadata(payload)`.
+- **Endpoints**:
+  - `POST /jobs` → enqueue a job; returns `{ jobId, backend }` where backend is `rq` or `memory` fallback.
+  - `GET /jobs/<jobId>` → returns job `status` and `result` or `error`.
+- **Worker**: run from repo root with `rq worker extract` (uses `REDIS_URL` or defaults to `redis://localhost:6379/0`).
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant API as Flask API (app.py)
+  participant RQ as Redis Queue
+  participant Worker as RQ Worker
+
+  Client->>API: POST /jobs {payload}
+  API->>RQ: enqueue jobs.tasks.task_extract(payload)
+  API-->>Client: {jobId, backend}
+  Worker->>RQ: fetch job
+  Worker->>API: import app.extract_metadata
+  Worker->>Worker: run extract_metadata(payload)
+  Worker->>RQ: store result
+  Client->>API: GET /jobs/{jobId}
+  API->>RQ: fetch status/result
+  API-->>Client: {status, result|error}
+```
+
 ## Configuration
 - Examples:
   - GitHub: `datasource/github/config.example.yaml`
