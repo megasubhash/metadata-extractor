@@ -1,0 +1,8 @@
+# GitHub source example config
+# Prefer setting token via env var GITHUB_TOKEN
+
+type: github
+owner: octocat
+repo: Hello-World
+# token: ghp_xxx
+api_base: https://api.github.com
