@@ -109,4 +109,4 @@ def extract():
 
 if __name__ == "__main__":
     # Simple dev server. For prod, use gunicorn/uwsgi.
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=False)

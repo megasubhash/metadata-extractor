@@ -1,0 +1,19 @@
+# Redis source example config
+
+type: redis
+host: localhost
+port: 6379
+db: 0
+password: null
+
+# Extraction options
+scan_count: 1000
+sample_keys_limit: 5000
+include_patterns:
+  - "*"
+exclude_patterns: []
+
+# Business context: map key prefixes to tags
+prefix_tags:
+  "user:": "users"
+  "order:": "orders"

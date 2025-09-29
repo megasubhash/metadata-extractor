@@ -14,4 +14,7 @@ class DataSourceFactory:
         if source_type == 'github':
             from .github.strategy import GitHubStrategy
             return GitHubStrategy(config)
+        if source_type == 'redis':
+            from .redis.strategy import RedisStrategy
+            return RedisStrategy(config)
         raise ValueError(f"Unsupported data source type: {source_type}")

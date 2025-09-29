@@ -1,8 +1,0 @@
-# Example PostgreSQL config
-# You can extend this for other sources
-type: postgres
-host: localhost
-port: 5432
-database: sample_db
-user: sample_user
-password: sample_password

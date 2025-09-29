@@ -21,13 +21,21 @@ Built with Strategy + Factory patterns for extensibility.
 │   │   ├── __init__.py
 │   │   ├── strategy.py
 │   │   └── config.example.yaml
-│   └── postgres/
+│   ├── postgres/
 │       ├── __init__.py
 │       ├── strategy.py
 │       └── config.example.yaml
+│   └── redis/
+│       ├── __init__.py
+│       ├── strategy.py
+│       ├── extractors/
+│       │   ├── __init__.py
+│       │   ├── schema.py
+│       │   ├── business.py
+│       │   └── quality.py
+│       └── config.example.yaml
 ├── config/
-│   ├── config.yaml            # default example (postgres)
-│   └── config.github.yaml     # example for github
+│   └── (optional if using file-based configs)
 ├── sample_data/
 │   └── init.sql
 ├── main.py
@@ -127,6 +135,52 @@ Notes:
 ### PostgreSQL Source
 
 - Example config also available at `datasource/postgres/config.example.yaml`.
+
+### Redis Source
+
+- **Config example**: `datasource/redis/config.example.yaml`
+
+```yaml
+type: redis
+host: localhost
+port: 6379
+db: 0
+password: null
+
+# Extraction options
+scan_count: 1000
+sample_keys_limit: 5000
+include_patterns:
+  - "*"
+exclude_patterns: []
+
+# Business context: map key prefixes to tags
+prefix_tags:
+  "user:": "users"
+  "order:": "orders"
+```
+
+- **API usage** (`app.py` must be running):
+
+```bash
+curl -X POST http://localhost:8000/extract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": {
+      "type": "redis",
+      "host": "localhost",
+      "port": 6379,
+      "db": 0,
+      "password": null,
+      "scan_count": 1000,
+      "sample_keys_limit": 5000,
+      "include_patterns": ["*"],
+      "exclude_patterns": [],
+      "prefix_tags": { "user:": "users", "order:": "orders" }
+    },
+    "flags": { "all": true }
+  }'
+```
 
 ## Design
 

@@ -1,9 +1,0 @@
-# Example GitHub config
-# Either provide token here or via GITHUB_TOKEN environment variable
-# Note: For public repos, token is optional but recommended to increase rate limits
-
-type: github
-owner: octocat
-repo: Hello-World
-# token: ghp_example_personal_access_token
-api_base: https://api.github.com
