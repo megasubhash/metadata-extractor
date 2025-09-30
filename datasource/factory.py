@@ -1,5 +1,9 @@
-from typing import Dict, Any
+import logging
+from typing import Any, Dict
+
 from .base import DataSourceStrategy
+
+logger = logging.getLogger(__name__)
 
 class DataSourceFactory:
     """
@@ -8,13 +12,20 @@ class DataSourceFactory:
     @staticmethod
     def get_strategy(config: Dict[str, Any]) -> DataSourceStrategy:
         source_type = config.get('type')
-        if source_type == 'postgres':
-            from .postgres.strategy import PostgresStrategy
-            return PostgresStrategy(config)
+        logger.info(f"Creating strategy for data source type: {source_type}")
+        
+        # if source_type == 'postgres':
+        #     logger.info("Initializing PostgresStrategy")
+        #     from .postgres.strategy import PostgresStrategy
+        #     return PostgresStrategy(config)
         if source_type == 'github':
+            logger.info("Initializing GitHubStrategy")
             from .github.strategy import GitHubStrategy
             return GitHubStrategy(config)
         if source_type == 'redis':
+            logger.info("Initializing RedisStrategy")
             from .redis.strategy import RedisStrategy
             return RedisStrategy(config)
+        
+        logger.error(f"Unsupported data source type: {source_type}")
         raise ValueError(f"Unsupported data source type: {source_type}")

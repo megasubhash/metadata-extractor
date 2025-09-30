@@ -29,7 +29,7 @@ curl -X POST http://localhost:8000/extract \
   -d '{
     "config": {
       "type": "redis",
-      "host": "localhost",
+      "host": "redis/localhost",
       "port": 6379,
       "db": 0,
       "password": null,
@@ -71,45 +71,18 @@ Optionally test GitHub (public repo shown; token recommended via env `GITHUB_TOK
 curl -X POST http://localhost:8000/extract \
   -H "Content-Type: application/json" \
   -d '{
-    "config": {
+    "config":{
       "type": "github",
-      "owner": "octocat",
-      "repo": "Hello-World"
+      "owner": "pallets",
+      "repo": "flask"
     },
     "flags": { "all": true }
-  }'
+}'
 ```
 You should see repo `schema` (field lists), `business_context` (description, topics), `quality_metrics` (stars, PR/issue counts), and fork-based `lineage`.
 
-## 5) Optional: Publish to OpenMetadata
-If you have an OpenMetadata instance and want to publish Postgres metadata (or attach tags), install the optional client and provide config.
-```bash
-pip install "openmetadata-ingestion>=1.3,<2"
-```
-Example request body fields (add to the `/extract` POST body when you also include the Postgres config):
-```json
-{
-  "publishOpenMetadata": true,
-  "openMetadataConfig": {
-    "server": "http://localhost:8585/api",
-    "auth_provider": "no-auth",
-    "jwt_token": "",
-    "service": {
-      "name": "local_pg",
-      "type": "Postgres",
-      "connection": {
-        "hostPort": "localhost:5432",
-        "database": "sample_db",
-        "username": "sample_user",
-        "password": "sample_password"
-      }
-    }
-  }
-}
-```
-Note: This is optional; the core demo works without it.
 
-## 6) Health Check
+## 5) Health Check
 ```bash
 curl http://localhost:8000/health
 ```

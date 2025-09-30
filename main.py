@@ -1,20 +1,34 @@
+from __future__ import annotations
+
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
+from typing import Any, Dict
 
 import yaml
 
 from datasource.factory import DataSourceFactory
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 
 def load_config(config_path: str) -> dict:
+    logger.info(f"Loading configuration from: {config_path}")
     path = Path(config_path)
     if not path.exists():
-        print(f"Config file not found: {config_path}", file=sys.stderr)
+        logger.error(f"Config file not found: {config_path}")
         sys.exit(1)
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+        logger.info(f"Configuration loaded successfully for data source type: {config.get('type', 'unknown')}")
+        return config
 
 
 def main():
@@ -61,42 +75,59 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    logger.info("Starting metadata extraction CLI")
+    logger.info(f"Arguments: {vars(args)}")
 
     config = load_config(args.config)
-    strategy = DataSourceFactory.get_strategy(config)
+    try:
+        strategy = DataSourceFactory.get_strategy(config)
+    except Exception as e:
+        logger.error(f"Failed to create strategy: {e}")
+        sys.exit(1)
 
     output = {}
 
     if args.all or args.schema:
-        output["schema"] = strategy.extract_schema()
+        logger.info("Extracting schema metadata")
+        try:
+            output["schema"] = strategy.extract_schema()
+            logger.info("Schema extraction completed")
+        except Exception as e:
+            logger.error(f"Schema extraction failed: {e}")
+            sys.exit(1)
 
     if args.all or args.business:
-        output["business_context"] = strategy.extract_business_context()
+        logger.info("Extracting business context metadata")
+        try:
+            output["business_context"] = strategy.extract_business_context()
+            logger.info("Business context extraction completed")
+        except Exception as e:
+            logger.error(f"Business context extraction failed: {e}")
+            sys.exit(1)
 
     if args.all or args.quality:
-        output["quality_metrics"] = strategy.extract_quality_metrics()
+        logger.info("Extracting quality metrics")
+        try:
+            output["quality_metrics"] = strategy.extract_quality_metrics()
+            logger.info("Quality metrics extraction completed")
+        except Exception as e:
+            logger.error(f"Quality metrics extraction failed: {e}")
+            sys.exit(1)
 
     if args.all or args.lineage:
-        output["lineage"] = strategy.extract_lineage()
+        logger.info("Extracting lineage information")
+        try:
+            output["lineage"] = strategy.extract_lineage()
+            logger.info("Lineage extraction completed")
+        except Exception as e:
+            logger.error(f"Lineage extraction failed: {e}")
+            sys.exit(1)
 
+    logger.info("All metadata extraction completed successfully")
     print(json.dumps(output, indent=2, default=str))
 
-    # Optional: publish to OpenMetadata
-    if args.publish_openmetadata:
-        try:
-            om_conf = load_config(args.om_config)
-            from integrations.openmetadata_adapter import OpenMetadataAdapter
-
-            adapter = OpenMetadataAdapter(om_conf)
-            # For Postgres: publish everything
-            if config.get("type") == "postgres":
-                default_db = config.get("database")
-                adapter.publish_postgres(output, default_database=default_db, default_schema=config.get("schema", "public"))
-            # Example: attach GitHub topics as tags onto a given schema (if you choose to)
-            elif config.get("type") == "github":
-                pass  # Typically you’d enrich data entities, not publish a repo as a table
-        except Exception as e:
-            print(f"OpenMetadata publish failed: {e}", file=sys.stderr)
+    
 
 
 if __name__ == "__main__":

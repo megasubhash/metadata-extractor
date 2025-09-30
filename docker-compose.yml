@@ -1,0 +1,74 @@
+services:
+  # Redis service for caching and job queue
+  redis:
+    image: redis:7-alpine
+    container_name: metadata_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - metadata_network
+
+  # Main application service
+  app:
+    build: .
+    container_name: metadata_extractor
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - FLASK_ENV=production
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount sample data for easy access
+      - ./sample_data:/app/sample_data:ro
+    networks:
+      - metadata_network
+    restart: unless-stopped
+
+  # Optional: RQ Worker for background jobs
+  worker:
+    build: .
+    container_name: metadata_worker
+    command: ["sh", "-c", "cd /app && rq worker extract --url redis://redis:6379/0"]
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - metadata_network
+    restart: unless-stopped
+
+  # Optional: Redis data seeder (run once)
+  seed:
+    build: .
+    container_name: metadata_seeder
+    command: ["python", "sample_data/seed_redis.py"]
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - metadata_network
+    restart: "no"  # Run only once
+    profiles:
+      - seed  # Only run when explicitly requested
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  metadata_network:
+    driver: bridge
