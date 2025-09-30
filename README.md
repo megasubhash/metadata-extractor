@@ -1,4 +1,4 @@
-# Atlan Take-Home: Data Source Application
+# Data Source Application
 
 A pluggable metadata extractor that connects to a data source and extracts:
 
