@@ -10,8 +10,7 @@
 - **Per-extractor composition** for separation of concerns: each strategy delegates to `extractors/` modules per concern (schema, business, lineage, quality). Examples:
   - GitHub: `datasource/github/extractors/{schema,business,lineage,quality}.py` via `datasource/github/strategy.py`.
   - Redis: `datasource/redis/extractors/{schema,business,quality}.py` via `datasource/redis/strategy.py`.
-- **API-first runtime** with Flask: `app.py` exposes `POST /extract` taking inline config and flags, plus optional OpenMetadata publish.
-- **Optional publisher**: `integrations/openmetadata_adapter.py` maps extracted outputs to OpenMetadata entities. Kept optional to keep core self-contained.
+- **API-first runtime** with Flask: `app.py` exposes `POST /extract` taking inline config and flags
 
 ## Metadata Scope & Rationale
 - **Schema**
@@ -43,14 +42,3 @@
 - **Core**: Schema + business context per source; `/extract` API in `app.py`; docs and sample data.
 - **Optional**: Lineage and quality metrics; OpenMetadata publishing.
 
-## Production Considerations
-- **Error handling**: Per-key try/except (Redis); centralized HTTP `_get()` (GitHub). API returns `400` with `{error: ...}`.
-- **Scalability**: Redis SCAN for non-blocking iteration; plan pagination/backoff for GitHub.
-- **Security**: Use env for tokens (e.g., `GITHUB_TOKEN`); avoid logging secrets; allow config files for local runs.
-- **Extensibility**: Add `datasource/<source>/strategy.py` + `extractors/`, map in `datasource/factory.py`, automatically available via API.
-
-## Future Work
-- GitHub: pagination, retry/backoff, timeouts.
-- Redis: per-type value sampling; optional Memory USAGE with fallbacks.
-- API: request validation (pydantic), auth, structured logging, output schema validation.
-- Publishing: robust type mapping, idempotent upserts, batching.

@@ -100,34 +100,7 @@ sequenceDiagram
   - Redis: `datasource/redis/config.example.yaml`
 - Secrets: prefer env (e.g., `GITHUB_TOKEN`) or secret managers (not committed).
 
-## Error Handling & Resilience
-- GitHub: centralized `_get()` with headers, token support; callers handle JSON safely. Can be extended with timeouts/backoff/pagination.
-- Redis: SCAN iteration with `scan_count` and per-key try/except to avoid hotspots or permission issues.
-- API: returns `400` with `{ "error": "..." }` on invalid input.
-- Publishing: lazy import of OM client; clear error if not installed.
 
-## Observability & Security
-- Minimal logging for take-home; can be extended with structured logs and request IDs.
-- No secrets logged; configs read from payload or files. Tokens recommended via env variables.
-
-## Testing
-- `tests/test_github_strategy.py`: schema, business, lineage, quality via monkeypatched `_get()`.
-- `tests/test_factory.py`: factory returns correct strategies for GitHub and Redis.
-- `tests/conftest.py`: ensures project root on `sys.path`.
-
-## Extensibility
-- Add a source:
-  1. Create `datasource/<source>/strategy.py` + `extractors/`.
-  2. Implement the four extractor methods (or return N/A for non-applicable ones).
-  3. Map it in `datasource/factory.py`.
-- Add an extractor type:
-  - Implement an extractor class and delegate from the source’s `strategy.py`.
-
-## Future Enhancements
-- GitHub: pagination for completeness; retry/backoff on rate limits; timeouts.
-- Redis: per-type value sampling (list length, set size); optional MEMORY USAGE where permitted.
-- API: request validation (pydantic), auth, structured logging.
-- Publishing: robust type mapping, idempotent upserts, batching.
 
 ## Key Files
 - `datasource/base.py` — strategy interface.
